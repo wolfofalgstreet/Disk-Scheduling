@@ -13,6 +13,8 @@ import (
   "fmt"
   "strings"
   "os"
+  //"reflect"
+  "strconv"
 )
 
 // --------------------------- //
@@ -47,9 +49,9 @@ func find(item string, list []string) (index int) {
 
 // ------------------------------------------------ //
 // Looks for a word in array and converts it to int //
-func lookConvert(word string, words []string) (int) {
-  index := find(word, words)
-  num, err := strconv.Atoi(words[index + 1])
+func lookConvert(word string, lines []string) (int) {
+  index := find(word, lines)
+  num, err := strconv.Atoi(lines[index + 1])
 
   // Type conversion error handling
   if err != nil {
@@ -61,7 +63,7 @@ func lookConvert(word string, words []string) (int) {
 
 // ----------------------------------- //
 // Read Input File parameter in arg[1] //
-func readInputFile() {
+func readInputFile()(algorithm string, lowerCYL, upperCYL, initCYL int, cylReqs []int) {
 
   // Fetch name and read file
   fileName := os.Args[1]
@@ -69,22 +71,48 @@ func readInputFile() {
   checkErr(err)
   defer input.Close()
 
-  // Scanning word by Word
+  // Scanning each line of file
   scanner := bufio.NewScanner(input)
   scanner.Split(bufio.ScanLines)
 
-  // Words will be scanned into words[]
+  // Lines will be scanned into lines[]
+  var lines []string
   var words []string
+
   for scanner.Scan() {
-    words = append(words, scanner.Text())
+    lines = append(lines, scanner.Text())
   }
 
-  // Get scheduler setup info
-  algorithm := find("use", words[0])
-  lowerCYL := find()
+  // Extracting info for each line
+  for i := 0; i < len(lines); i = i + 1 {
 
-  //fmt.Println("name: ", fileName)
+    // Each line in file gets split into a string array
+    words = strings.Split(lines[i], " ")
 
+    // Get algo type, cylinder bounds, and start location info
+    // Avoids processing comments '#'
+    switch words[0] {
+    case "use":
+      algorithm = words[1]
+    case "lowerCYL":
+      lowerCYL = lookConvert("lowerCYL", words)
+    case "upperCYL":
+      upperCYL = lookConvert("upperCYL", words)
+    case "initCYL":
+      initCYL = lookConvert("initCYL", words)
+    case "cylreq":
+      cylReqs = append(cylReqs, lookConvert("cylreq", words))
+    }
+  }
+
+  // Confirming read input
+  fmt.Println("algorithm: ", algorithm, " lowerCYL: ", lowerCYL, " upperCYL: ", upperCYL, " initCYL: ", initCYL)
+  fmt.Println("Cylinder Requests:")
+  for i := 0; i < len(cylReqs); i = i + 1 {
+    fmt.Println(cylReqs[i])
+  }
+
+  return algorithm, lowerCYL, upperCYL, initCYL, cylReqs
 }
 
 
@@ -92,6 +120,25 @@ func readInputFile() {
 // Initiate Program //
 func main() {
 
-  readInputFile()
+  // Read input file and structure data
+  algorithm, lowerCYL, upperCYL, initCYL, cylReqs := readInputFile()
+
+  // Execute chosen scheduling algorithm
+  switch algorithm {
+  case "fcfs":
+    //
+  case "sstf":
+    //
+  case "scan":
+    //
+  case "c-scan":
+    //
+  case "look":
+    //
+  case "c-look":
+    //
+  }
+
+  algorithm, lowerCYL, upperCYL, initCYL, cylReqs = algorithm, lowerCYL, upperCYL, initCYL, cylReqs //
 
 }
