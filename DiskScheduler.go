@@ -14,6 +14,7 @@ import (
   "strings"
   "os"
   //"reflect"
+  "math"
   "strconv"
 )
 
@@ -75,7 +76,7 @@ func readInputFile()(algorithm string, lowerCYL, upperCYL, initCYL int, cylReqs 
   scanner := bufio.NewScanner(input)
   scanner.Split(bufio.ScanLines)
 
-  // Lines will be scanned into lines[]
+  // Temporary storage
   var lines []string
   var words []string
 
@@ -105,16 +106,63 @@ func readInputFile()(algorithm string, lowerCYL, upperCYL, initCYL int, cylReqs 
     }
   }
 
-  // Confirming read input
-  fmt.Println("algorithm: ", algorithm, " lowerCYL: ", lowerCYL, " upperCYL: ", upperCYL, " initCYL: ", initCYL)
-  fmt.Println("Cylinder Requests:")
-  for i := 0; i < len(cylReqs); i = i + 1 {
-    fmt.Println(cylReqs[i])
-  }
-
   return algorithm, lowerCYL, upperCYL, initCYL, cylReqs
 }
 
+
+// ----------------------------------------------------- //
+// Print formatted setup info and list cylinder requests //
+func printReadInput(algorithm string, lowerCYL, upperCYL, initCYL int, cylReqs []int)() {
+
+  fmt.Println("Seek algorithm: ", strings.ToUpper(algorithm))
+  fmt.Println(" Lower cylinder: ", lowerCYL)
+  fmt.Println(" Upper cylinder: ", upperCYL)
+  fmt.Println(" Init cylinder requests: ")
+  for i := 0; i < len(cylReqs); i = i + 1 {
+    fmt.Println("  Cylinder   ", cylReqs[i])
+  }
+}
+
+
+// --------------------------------------- //
+// Check if cylinder is within disk bounds //
+func checkBounds(lowerCYL, upperCYL, cylinder int)(bool) {
+  inBounds := false
+  if cylinder > lowerCYL && cylinder < upperCYL {
+      inBounds = true
+  }
+  return inBounds
+}
+
+
+// ------------------------------------------------------------------------ //
+// Execute the First-come First-Served disk scheduling algorithm will print //
+// cylinder number as it processes them and calculate total seek distance   //
+func runFCFS(algorithm string, lowerCYL, upperCYL, initCYL int, cylReqs []int)() {
+  nextDistance := float64(cylReqs[0] - initCYL)
+  seekDistance := int(nextDistance)
+  fmt.Println("Servicing   ", cylReqs[0])
+
+  for i := 1; i < len(cylReqs); i = i + 1 {
+    fmt.Println("Servicing   ", cylReqs[i])
+    if checkBounds(lowerCYL, upperCYL, cylReqs[i]) {
+      nextDistance = math.Abs(float64(cylReqs[i] - cylReqs[i - 1]))
+      seekDistance = seekDistance + int(nextDistance)
+    } else {
+      fmt.Println("Cylinder is out of bounds")
+    }
+
+  }
+  fmt.Println(strings.ToUpper(algorithm), " traversal count = ", seekDistance)
+}
+
+
+// ------------------------------------------------------------------------ //
+// Execute the First-come First-Served disk scheduling algorithm will print //
+// cylinder number as it processes them and calculate total seek distance   //
+func runSSTF(algorithm string, lowerCYL, upperCYL, initCYL int, cylReqs []int)() {
+
+}
 
 // ---------------- //
 // Initiate Program //
@@ -123,20 +171,24 @@ func main() {
   // Read input file and structure data
   algorithm, lowerCYL, upperCYL, initCYL, cylReqs := readInputFile()
 
+  //
+  printReadInput(algorithm, lowerCYL, upperCYL, initCYL, cylReqs)
+
   // Execute chosen scheduling algorithm
   switch algorithm {
-  case "fcfs":
-    //
-  case "sstf":
-    //
-  case "scan":
-    //
-  case "c-scan":
-    //
-  case "look":
-    //
-  case "c-look":
-    //
+
+    case "fcfs":
+      runFCFS(algorithm, lowerCYL, upperCYL, initCYL, cylReqs)
+    case "sstf":
+      runSSTF(algorithm, lowerCYL, upperCYL, initCYL, cylReqs)
+    case "scan":
+      //
+    case "c-scan":
+      //
+    case "look":
+      //
+    case "c-look":
+      //
   }
 
   algorithm, lowerCYL, upperCYL, initCYL, cylReqs = algorithm, lowerCYL, upperCYL, initCYL, cylReqs //
