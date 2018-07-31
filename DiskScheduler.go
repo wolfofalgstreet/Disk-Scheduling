@@ -147,13 +147,22 @@ func checkBounds(lowerCYL, upperCYL, cylinder int)(bool) {
 
 //-------------------------------- //
 // Perform an Inversed Bubble sort //
-func sort(cylReqs []cylinder)([]cylinder) {
+func sort(cylReqs []cylinder, sortBy string)([]cylinder) {
 
-  // Sort the structs by cost
+
   for x := 0; x < len(cylReqs); x = x + 1 {
     for i := 0; i < len(cylReqs) - 1; i = i + 1 {
-      if cylReqs[i].cost < cylReqs[i + 1].cost {
-        cylReqs[i], cylReqs[i + 1] = cylReqs[i + 1], cylReqs[i]
+
+      // Sort the structs by cost
+      if sortBy == "cost" {
+        if cylReqs[i].cost < cylReqs[i + 1].cost {
+          cylReqs[i], cylReqs[i + 1] = cylReqs[i + 1], cylReqs[i]
+        }
+      } else {
+        // Sort the structs by location
+        if cylReqs[i].location < cylReqs[i + 1].location {
+          cylReqs[i], cylReqs[i + 1] = cylReqs[i + 1], cylReqs[i]
+        }
       }
     }
   }
@@ -206,7 +215,7 @@ func runSSTF(algorithm string, lowerCYL, upperCYL, initCYL int, cylReqs []int)()
     // For every requests, calculate costs and service the
     // one with the shortest seek time
     for i := 0; i < len(cylReqs); i = i + 1 {
-      requests = sort(requests)
+      requests = sort(requests, "cost")
 
       fmt.Println("Servicing   ", requests[len(requests)-1].location)
 
@@ -232,16 +241,147 @@ func runSSTF(algorithm string, lowerCYL, upperCYL, initCYL int, cylReqs []int)()
 }
 
 
-// ------------------------------------------------------------------------ //
-// Execute the  disk scheduling algorithm will print //
-// cylinder number as it processes them and calculate total seek distance   //
+// -------------------------------------------------------------------- //
+// Execute the SCAN scheduling algorithm will print cylinder number as  //
+// it processes them and calculate total seek distance                  //
 func runSCAN(algorithm string, lowerCYL, upperCYL, initCYL int, cylReqs []int)() {
+
+  var requests = make([]cylinder, len(cylReqs))
+  var cyl cylinder
+  current := initCYL
+  startIndex := 0
+
+  // Create array of struct cylinders with respective locations
+  // and initial costs
+  for i := 0; i < len(cylReqs); i = i + 1 {
+    cyl.location = cylReqs[i]
+    cyl.cost = int(math.Abs(float64(cylReqs[i] - initCYL)))
+    requests[i] = cyl
+  }
+
+  seekDistance := 0
+
+  // Start by sorting request by location
+  requests = sort(requests, "location")
+
+  // Find First cylinder location to visit
+  for i := 0; i < len(requests); i = i + 1 {
+    if initCYL <= requests[i].location {
+      startIndex = i
+    }
+  }
+
+  // Service cylinders to the right(up) of the disk
+  for i := startIndex; i >= 0; i = i - 1 {
+    fmt.Println("Servicing   ", requests[i].location)
+
+    // Recalculate costs without current cylinder
+    // and update traversal distance
+    if requests[i].location < upperCYL && requests[i].location > lowerCYL {
+      seekDistance = seekDistance + int(math.Abs(float64(requests[i].location - current)))
+      current = requests[i].location
+      fmt.Println(strings.ToUpper(algorithm), " traversal count = ", seekDistance, " i: ", i)
+    } else {
+      fmt.Println("Cylinder is out of bounds")
+    }
+  }
+
+  fmt.Println("finished right") //
+
+  // Service cylinders to the left(down) of the disk
+  for i := startIndex + 1; i < len(requests); i = i + 1 {
+    fmt.Println("i: ", i)
+    fmt.Println("Servicing   ", requests[i].location, " with curr: ", current)
+
+    // Recalculate costs without current cylinder
+    // and update traversal distance
+    if requests[i].location < upperCYL && requests[i].location > lowerCYL {
+      seekDistance = seekDistance + int(math.Abs(float64(requests[i].location - current)))
+      current = requests[i].location
+      fmt.Println(strings.ToUpper(algorithm), " traversal count = ", seekDistance, " i: ", i)
+    } else {
+      fmt.Println("Cylinder is out of bounds")
+    }
+  }
+
+  fmt.Println(strings.ToUpper(algorithm), " traversal count = ", seekDistance)
 
 }
 
 
+// ---------------------------------------------------------------------- //
+// Execute the C-SCAN scheduling algorithm will print cylinder number as  //
+// it processes them and calculate total seek distance                    //
+func runCSCAN(algorithm string, lowerCYL, upperCYL, initCYL int, cylReqs []int)() {
+  var requests = make([]cylinder, len(cylReqs))
+  var cyl cylinder
+  current := initCYL
+  startIndex := 0
+  seekDistance := 0
+
+  // Create array of struct cylinders with respective locations
+  // and initial costs
+  for i := 0; i < len(cylReqs); i = i + 1 {
+    cyl.location = cylReqs[i]
+    cyl.cost = int(math.Abs(float64(cylReqs[i] - initCYL)))
+    requests[i] = cyl
+  }
+
+  // Start by sorting request by location
+  requests = sort(requests, "location")
+
+  // Find First cylinder location to visit
+  for i := 0; i < len(requests); i = i + 1 {
+    if initCYL <= requests[i].location {
+      startIndex = i
+    }
+  }
+
+  // Service cylinders to the right(up) of the disk
+  for i := startIndex; i >= 0; i = i - 1 {
+    fmt.Println("Servicing   ", requests[i].location)
+
+    // Recalculate costs without current cylinder
+    // and update traversal distance
+    if requests[i].location < upperCYL && requests[i].location > lowerCYL {
+      seekDistance = seekDistance + int(math.Abs(float64(requests[i].location - current)))
+      current = requests[i].location
+
+    } else {
+      fmt.Println("Cylinder is out of bounds")
+    }
+  }
 
 
+  // Update distance, account for head to reach end of disk
+  // and traverse back to otherside.
+  seekDistance = seekDistance + (upperCYL - current) + (upperCYL - lowerCYL)
+  current = 0
+
+  // Service cylinders to the left(down) of the disk
+  for i := len(requests) - 1; i > startIndex; i = i - 1 {
+    fmt.Println("Servicing   ", requests[i].location)
+
+    // Recalculate costs without current cylinder
+    // and update traversal distance
+    if requests[i].location < upperCYL && requests[i].location > lowerCYL {
+      seekDistance = seekDistance + int(math.Abs(float64(requests[i].location - current)))
+      current = requests[i].location
+    } else {
+      fmt.Println("Cylinder is out of bounds")
+    }
+  }
+
+  fmt.Println(strings.ToUpper(algorithm), " traversal count = ", seekDistance)
+}
+
+
+// -------------------------------------------------------------------- //
+// Execute the LOOK scheduling algorithm will print cylinder number as  //
+// it processes them and calculate total seek distance                  //
+func runLOOK(algorithm string, lowerCYL, upperCYL, initCYL int, cylReqs []int)() {
+
+}
 
 
 // ---------------- //
@@ -262,9 +402,9 @@ func main() {
     case "sstf":
       runSSTF(algorithm, lowerCYL, upperCYL, initCYL, cylReqs)
     case "scan":
-      runSCAN(algorithm, lowerCYL, upperCYL, initCYL, cylReqs)
+      runSCAN(algorithm, lowerCYL, upperCYL, initCYL, cylReqs) // Debug comming down
     case "c-scan":
-      //
+      runCSCAN(algorithm, lowerCYL, upperCYL, initCYL, cylReqs)
     case "look":
       //
     case "c-look":
