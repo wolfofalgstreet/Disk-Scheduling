@@ -13,7 +13,6 @@ import (
   "fmt"
   "strings"
   "os"
-  //"reflect"
   "math"
   "strconv"
 )
@@ -387,7 +386,76 @@ func runCSCAN(algorithm string, lowerCYL, upperCYL, initCYL int, cylReqs []int)(
 // Execute the LOOK scheduling algorithm will print cylinder number as  //
 // it processes them and calculate total seek distance                  //
 func runLOOK(algorithm string, lowerCYL, upperCYL, initCYL int, cylReqs []int)() {
+  var requests = make([]cylinder, len(cylReqs))
+  var cyl cylinder
+  current := initCYL
+  startIndex := 0
+  seekDistance := 0
+  turnHead := false
 
+  // Create array of struct cylinders with respective locations
+  // and initial costs
+  for i := 0; i < len(cylReqs); i = i + 1 {
+    cyl.location = cylReqs[i]
+    cyl.cost = int(math.Abs(float64(cylReqs[i] - initCYL)))
+    requests[i] = cyl
+  }
+
+  // Start by sorting request by location
+  requests = sort(requests, "location")
+
+  // Find First cylinder location to visit
+  for i := 0; i < len(requests); i = i + 1 {
+    if initCYL <= requests[i].location {
+      startIndex = i
+    }
+
+    // Check if head must turn
+    if requests[i].location < initCYL {
+      turnHead = true
+    }
+  }
+
+  // Service cylinders to the right(up) of the disk
+  for i := startIndex; i >= 0; i = i - 1 {
+
+    fmt.Println("Servicing   ", requests[i].location)
+
+    // Recalculate costs without current cylinder
+    // and update traversal distance
+    if requests[i].location < upperCYL && requests[i].location > lowerCYL {
+      seekDistance = seekDistance + int(math.Abs(float64(requests[i].location - current)))
+      current = requests[i].location
+
+    } else {
+      fmt.Println("Cylinder is out of bounds")
+    }
+  }
+
+
+  // Update distance, account for head to reach end of disk
+  // and traverse back to otherside, only if it has to
+  if turnHead {
+    lastCYL := current
+    current = requests[startIndex + 1].location
+    seekDistance  = seekDistance + (lastCYL - current)
+
+    // Service cylinders to the left(down) of the disk
+    for i := startIndex + 1; i < len(requests); i = i + 1 {
+      fmt.Println("Servicing   ", requests[i].location)
+
+      // Recalculate costs without current cylinder
+      // and update traversal distance
+      if requests[i].location < upperCYL && requests[i].location > lowerCYL {
+        seekDistance = seekDistance + int(math.Abs(float64(requests[i].location - current)))
+        current = requests[i].location
+      } else {
+        fmt.Println("Cylinder is out of bounds")
+      }
+    }
+  }
+
+  fmt.Println(strings.ToUpper(algorithm), " traversal count = ", seekDistance)
 }
 
 
@@ -413,7 +481,7 @@ func main() {
     case "c-scan":
       runCSCAN(algorithm, lowerCYL, upperCYL, initCYL, cylReqs)
     case "look":
-      //
+      runLOOK(algorithm, lowerCYL, upperCYL, initCYL, cylReqs)
     case "c-look":
       //
   }
