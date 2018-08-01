@@ -249,6 +249,7 @@ func runSCAN(algorithm string, lowerCYL, upperCYL, initCYL int, cylReqs []int)()
   var cyl cylinder
   current := initCYL
   startIndex := 0
+  turnHead := false
 
   // Create array of struct cylinders with respective locations
   // and initial costs
@@ -268,6 +269,11 @@ func runSCAN(algorithm string, lowerCYL, upperCYL, initCYL int, cylReqs []int)()
     if initCYL <= requests[i].location {
       startIndex = i
     }
+
+    // Check if head must turn
+    if requests[i].location < initCYL {
+      turnHead = true
+    }
   }
 
   // Service cylinders to the right(up) of the disk
@@ -279,25 +285,27 @@ func runSCAN(algorithm string, lowerCYL, upperCYL, initCYL int, cylReqs []int)()
     if requests[i].location < upperCYL && requests[i].location > lowerCYL {
       seekDistance = seekDistance + int(math.Abs(float64(requests[i].location - current)))
       current = requests[i].location
-      fmt.Println(strings.ToUpper(algorithm), " traversal count = ", seekDistance, " i: ", i)
     } else {
       fmt.Println("Cylinder is out of bounds")
     }
   }
 
-  fmt.Println("finished right") //
+  // Update distance, account for head to reach end of disk
+  // and traverse back to and servicing requests on its way back, if it must go back
+  if turnHead {
+    seekDistance = seekDistance + (upperCYL - current)
+    current = upperCYL
+  }
 
   // Service cylinders to the left(down) of the disk
   for i := startIndex + 1; i < len(requests); i = i + 1 {
-    fmt.Println("i: ", i)
-    fmt.Println("Servicing   ", requests[i].location, " with curr: ", current)
+    fmt.Println("Servicing   ", requests[i].location)
 
     // Recalculate costs without current cylinder
     // and update traversal distance
     if requests[i].location < upperCYL && requests[i].location > lowerCYL {
       seekDistance = seekDistance + int(math.Abs(float64(requests[i].location - current)))
       current = requests[i].location
-      fmt.Println(strings.ToUpper(algorithm), " traversal count = ", seekDistance, " i: ", i)
     } else {
       fmt.Println("Cylinder is out of bounds")
     }
@@ -554,7 +562,7 @@ func main() {
     case "sstf":
       runSSTF(algorithm, lowerCYL, upperCYL, initCYL, cylReqs)
     case "scan":
-      runSCAN(algorithm, lowerCYL, upperCYL, initCYL, cylReqs) // Debug comming down
+      runSCAN(algorithm, lowerCYL, upperCYL, initCYL, cylReqs)
     case "c-scan":
       runCSCAN(algorithm, lowerCYL, upperCYL, initCYL, cylReqs)
     case "look":
@@ -564,6 +572,6 @@ func main() {
 
   }
 
-  algorithm, lowerCYL, upperCYL, initCYL, cylReqs = algorithm, lowerCYL, upperCYL, initCYL, cylReqs //
+  //algorithm, lowerCYL, upperCYL, initCYL, cylReqs = algorithm, lowerCYL, upperCYL, initCYL, cylReqs //
 
 }
