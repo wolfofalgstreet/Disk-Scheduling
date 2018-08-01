@@ -318,6 +318,7 @@ func runCSCAN(algorithm string, lowerCYL, upperCYL, initCYL int, cylReqs []int)(
   current := initCYL
   startIndex := 0
   seekDistance := 0
+  turnHead := false
 
   // Create array of struct cylinders with respective locations
   // and initial costs
@@ -334,6 +335,10 @@ func runCSCAN(algorithm string, lowerCYL, upperCYL, initCYL int, cylReqs []int)(
   for i := 0; i < len(requests); i = i + 1 {
     if initCYL <= requests[i].location {
       startIndex = i
+    }
+
+    if requests[i].location < initCYL {
+      turnHead = true
     }
   }
 
@@ -355,8 +360,10 @@ func runCSCAN(algorithm string, lowerCYL, upperCYL, initCYL int, cylReqs []int)(
 
   // Update distance, account for head to reach end of disk
   // and traverse back to otherside.
-  seekDistance = seekDistance + (upperCYL - current) + (upperCYL - lowerCYL)
-  current = 0
+  if turnHead {
+    seekDistance = seekDistance + (upperCYL - current) + (upperCYL - lowerCYL)
+    current = 0
+  }
 
   // Service cylinders to the left(down) of the disk
   for i := len(requests) - 1; i > startIndex; i = i - 1 {
